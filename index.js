@@ -90,6 +90,15 @@ async function run() {
             res.send(result);
         });
 
+        // Admin Privilegs 
+
+        // GET user by email
+        app.get('/users/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await userCollection.findOne({ email });
+            res.send(user);
+        });
+
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // await client.close();
