@@ -163,6 +163,136 @@ async function run() {
             res.send(user);
         });
 
+        // GET user by email
+        app.get('/users/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await userCollection.findOne({ email });
+            res.send(user);
+        });
+
+        // Manage users
+
+        // Get all users
+        app.get("/admin/users", async (req, res) => {
+            const users = await userCollection.find().toArray();
+            res.send(users);
+        });
+
+        // Update user info
+        app.patch("/admin/users/:email", async (req, res) => {
+            const { email } = req.params;
+            const updates = req.body;
+            const result = await userCollection.updateOne({ email }, { $set: updates });
+            res.send(result);
+        });
+
+        // Change role
+        app.patch("/admin/users/role/:email", async (req, res) => {
+            const { email } = req.params;
+            const { role } = req.body;
+            const result = await userCollection.updateOne({ email }, { $set: { role } });
+            res.send(result);
+        });
+
+        // Delete user
+        app.delete("/admin/users/:email", async (req, res) => {
+            const { email } = req.params;
+            const result = await userCollection.deleteOne({ email });
+            res.send(result);
+        });
+
+        // Add a new package
+        app.post('/packages', async (req, res) => {
+            try {
+                const data = req.body;
+                if (!data.name || !data.planId || !data.price || !data.speed) {
+                    return res.status(400).send({ error: "Missing required fields" });
+                }
+                const result = await packageCollection.insertOne(data);
+                res.status(201).send(result);
+            } catch (error) {
+                console.error("Error adding package:", error);
+                res.status(500).send({ error: "Failed to add package" });
+            }
+        });
+
+        // Delete a package
+        app.delete('/packages/:id', async (req, res) => {
+            try {
+                const id = req.params.id;
+                const result = await packageCollection.deleteOne({ _id: new ObjectId(id) });
+                res.send(result);
+            } catch (error) {
+                console.error("Error deleting package:", error);
+                res.status(500).send({ error: "Failed to delete package" });
+            }
+        });
+
+        // PATCH: Update an existing package by _id
+        app.patch("/packages/:id", async (req, res) => {
+            const { id } = req.params;
+            let updates = req.body;
+
+            // Exclude _id from updates if it exists
+            if (updates._id) {
+                delete updates._id;
+            }
+
+            try {
+                const result = await packageCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: updates }
+                );
+                res.send(result);
+            } catch (error) {
+                console.error("Update failed:", error);
+                res.status(500).send({ message: "Failed to update package" });
+            }
+        });
+
+
+
+        // GET all support requests (for Admin)
+        app.get('/support-requests', async (req, res) => {
+            try {
+                const requests = await supportCollection.find().sort({ createdAt: -1 }).toArray();
+                res.send(requests);
+            } catch (error) {
+                res.status(500).send({ error: "Failed to fetch support requests." });
+            }
+        });
+
+        // PUT update support request status + optional adminComments
+        app.put('/support-requests/:id', async (req, res) => {
+            try {
+                const id = req.params.id;
+                const { status, adminComments } = req.body;
+
+                if (!status) {
+                    return res.status(400).send({ error: "Status is required" });
+                }
+
+                const updateData = {
+                    status,
+                    lastUpdated: new Date()
+                };
+
+                if (status === "solved" && adminComments) {
+                    updateData.adminComments = adminComments;
+                }
+
+                const result = await supportCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: updateData }
+                );
+
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Failed to update support request." });
+            }
+        });
+
 
         // -----------
          // Get all subscriptions (Admin View)
