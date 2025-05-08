@@ -138,6 +138,22 @@ async function run() {
             }
         });
 
+        // PATCH: Mark a subscription as paid
+        app.patch('/subscriptions/:id/payment', async (req, res) => {
+            const { id } = req.params;
+            try {
+                const result = await subscriptionCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: { paymentStatus: "paid", paymentDate: new Date() } }
+                );
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ message: "Payment update failed" });
+            }
+        });
+
+
         // Admin Privileges 
 
         // GET user by email
