@@ -163,6 +163,36 @@ async function run() {
             res.send(user);
         });
 
+
+        // -----------
+         // Get all subscriptions (Admin View)
+        app.get('/subscriptions', async (req, res) => {
+            try {
+                const result = await subscriptionCollection.find().sort({ subscriptionDate: -1 }).toArray();
+                res.send(result);
+            } catch (error) {
+                console.error("Error fetching subscriptions:", error);
+                res.status(500).send({ message: "Failed to retrieve subscriptions" });
+            }
+        });
+
+        // Update subscription status (Admin View)
+        app.patch('/subscriptions/:id', async (req, res) => {
+            const { id } = req.params;
+            const updates = req.body;
+
+            try {
+                const result = await subscriptionCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: updates }
+                );
+                res.send(result);
+            } catch (err) {
+                console.error("Failed to update subscription:", err);
+                res.status(500).send({ message: "Update failed" });
+            }
+        });
+
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // await client.close();
